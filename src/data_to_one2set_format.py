@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from datasets import load_dataset, concatenate_datasets
 import re
 import argparse
 
@@ -42,40 +42,71 @@ def replace_numbers_to_DIGIT(tokens, k=2):
 
     return tokens
 
+def add_peos(dataset):
+    #We write the first keyphrase depending on if it's an absent keyphrase or a present keyphrase
+    if dataset["prmu"][0]=="P":
+        keyphrase_string = "{};".format(dataset["keyphrases"][0])
+    else:
+        keyphrase_string = "<peos>;{}".format(dataset["keyphrases"][0])
+
+    peos_written=0
+    for i in range(1,len(dataset["prmu"])):
+        if peos_written == 0:
+            if dataset["prmu"][i] != "P" and dataset["prmu"][i-1] == "P":
+                keyphrase_string = keyphrase_string+"<peos>;"
+                peos_written=1
+
+        keyphrase_string = keyphrase_string+ dataset["keyphrases"][i]+";"
+
+    dataset["keyphrases"]=keyphrase_string
+
+    return dataset
+
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-d","--data_file")
+    parser.add_argument("-r","--relation_file",required=False)
     parser.add_argument("-s","--output_src_file")
     parser.add_argument("-t","--output_trg_file")
 
     args = parser.parse_args()
     
-    data = load_dataset("json",data_files=args.data_file,cache_dir=".")
+    data = load_dataset("json",data_files=args.data_file)
+    data = data["train"]
 
     # Processing the text
-    #data = data.map(lambda ex:{"title": ex["text"].split("<s>")[0]})
-    #data = data.map(lambda ex:{"abstract": ex["text"].split("<s>")[1]})
+
+    if args.relation_file != None:
+        rel_data = load_dataset("json",data_files=args.relation_file)
+
+        rel_data = rel_data.map(lambda ex:{"title": ex["text"].split("<s>")[0]})
+        rel_data = rel_data.map(lambda ex:{"abstract": ex["text"].split("<s>")[1]})
+        rel_data = rel_data.rename_column("label","keyphrases")
+        rel_data = rel_data.map(lambda ex:{"keyphrases":ex["keyphrases"].split(";")},desc="splitting reference sequence for meng tokenization")
+        prmu_data = load_dataset("json",data_files="data/kp20k_3c_prmu.jsonl")
+        rel_data = rel_data["train"].add_column("prmu",prmu_data["train"]["prmu"])
+
+        data = concatenate_datasets([data,rel_data])
+
     data = data.map(meng17_tokenize_column,fn_kwargs={"column":"title"},desc="Meng 17 tokenization on title")
     data = data.map(meng17_tokenize_column,fn_kwargs={"column":"abstract"}, desc="Meng 17 tokenization on abstract")
     data = data.map(lambda ex:{"text":ex["title"]+EOS_token+ex["abstract"]},desc="Getting final input")
 
     # Processing the keyphrases sequence
-    if not isinstance(data["train"]["keyphrases"][0],list):
-        data = data.map(lambda ex:{"keyphrases":ex["keyphrases"].split(";")},desc="splitting reference sequence for meng tokenization")
-    else:
-        data = data.map(meng17_tokenize_column,fn_kwargs={"column":"keyphrases"},desc="Meng 17 tokenization on reference keyphrases")
-        data = data.map(lambda ex:{"keyphrases":";".join(ex["keyphrases"])},desc="Joining into final reference sequence")
-        
-    print(data["train"]["keyphrases"][0])
 
-    with open(args.output_src_file,"a") as out_src:
-        for line in data["train"]:
+    data = data.map(meng17_tokenize_column,fn_kwargs={"column":"keyphrases"},desc="Meng 17 tokenization on reference keyphrases")
+    data = data.map(lambda ex:{"keyphrases":";".join(ex["keyphrases"])},num_proc=8,desc="Joining into final reference sequence")
+        
+    print(data["keyphrases"][0])
+
+    with open(args.output_src_file,"w") as out_src:
+        for line in data:
             out_src.write(line["text"])
             out_src.write("\n")
     
-    with open(args.output_trg_file,"a") as out_trg:
-        for line in data["train"]:
+    with open(args.output_trg_file,"w") as out_trg:
+        for line in data:
             out_trg.write(line["keyphrases"])
             out_trg.write("\n")
