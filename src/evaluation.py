@@ -83,6 +83,7 @@ references = {}
 tgt_pres_abs = defaultdict(list)
 pre_pres_abs_top_m = defaultdict(list)
 pre_pres_abs_top_k = defaultdict(list)
+
 with open(args.reference, 'r') as f:
     for i,line in enumerate(tqdm(f)):
         doc = json.loads(line)
@@ -129,6 +130,8 @@ scores_at_m = defaultdict(list)
 scores_at_5 = defaultdict(list)
 scores_at_10 = defaultdict(list)
 valid_keys =  defaultdict(list)
+generation_rates_at_m = defaultdict(list)
+generation_rates_at_10 = defaultdict(list)
 for i, docid in enumerate(tqdm(references)):
 
     # compute scores for all references
@@ -151,6 +154,9 @@ for i, docid in enumerate(tqdm(references)):
     abs_references = [phrase for j, phrase in enumerate(references[docid]) if not tgt_pres_abs[docid][j]]
     abs_top_m = [phrase for j, phrase in enumerate(top_m[docid]) if not pre_pres_abs_top_m[docid][j]]
     abs_top_k = [phrase for j, phrase in enumerate(top_k[docid]) if not pre_pres_abs_top_k[docid][j]]
+    generation_rates_at_m[docid] = len(abs_top_m) * 100/ len(top_m[docid])
+    generation_rates_at_10[docid] = len(abs_top_k) * 100 / len(top_k[docid])
+
     abs_top_k.extend([PAD_PHRASE for j in range(PAD_MIN-len(pres_top_k))])
     if len(abs_references):
         scores_at_m['abs'].append(evaluate(abs_top_m, abs_references))
@@ -163,39 +169,25 @@ for eval in ['all', 'pre', 'abs']:
     avg_scores_at_m = np.mean(scores_at_m[eval], axis=0)
     avg_scores_at_5 = np.mean(scores_at_5[eval], axis=0)
     avg_scores_at_10 = np.mean(scores_at_10[eval], axis=0)
+
             
     # print out the performance of the model
     print("{} F@M: {:>4.1f} F@5: {:>4.1f} F@10: {:>4.1f} - {}".format(eval, avg_scores_at_m[2]*100, avg_scores_at_5[2]*100, avg_scores_at_10[2]*100, args.system.split("/")[-1]))
 
     if args.output_scores != None:
-        
-        with open(args.output_scores, 'w') as f:
+        output_file = re.sub("top_[a-z-A-Z]+\.jsonl$", "", args.system) + "results.{}.csv".format(eval)
+        print(output_file)
+        with open(output_file, 'w') as f:
             for i, docid in enumerate(valid_keys[eval]):
-                f.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(docid, scores_at_m[eval][i][0], scores_at_5[eval][i][0], scores_at_10[eval][i][0], scores_at_m[eval][i][1], scores_at_5[eval][i][1], scores_at_10[eval][i][1], scores_at_m[eval][i][2], scores_at_5[eval][i][2], scores_at_10[eval][i][2]))
+                f.write("{}\t{}\t{}\t{}\n".format(docid, scores_at_m[eval][i][2], scores_at_5[eval][i][2], scores_at_10[eval][i][2]))
 
+print("Generation rate @M: {}\n".format(np.mean(list(generation_rates_at_m.values()))))
+print("Generation rate @10: {}\n".format(np.mean(list(generation_rates_at_10.values()))))
 
+if args.output_scores != None:
+    with open(re.sub("top_[a-z-A-Z]+\.jsonl$", "", args.system) + "gen_rate_@m.json","w") as o_m:
+        json.dump(generation_rates_at_m,o_m)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    with open(re.sub("top_[a-z-A-Z]+\.jsonl$", "", args.system) + "gen_rate_@10.json","w") as o_ten:
+        json.dump(generation_rates_at_10,o_ten)
 
