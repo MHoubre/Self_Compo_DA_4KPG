@@ -185,3 +185,10 @@ for eval in ['R','M','U']:
             
     # print out the performance of the model
     print("{} F@M: {:>4.1f} F@5: {:>4.1f} F@10: {:>4.1f} - {}".format(eval, avg_scores_at_m[2]*100, avg_scores_at_5[2]*100, avg_scores_at_10[2]*100, args.system.split("/")[-1]))
+    
+    if args.output_scores != None:
+        output_file = re.sub("top_[a-z-A-Z]+\.jsonl$", "", args.system) + "results.{}.csv".format(eval)
+        print(output_file)
+        with open(output_file, 'w') as f:
+            for i, docid in enumerate(valid_keys[eval]):
+                f.write("{}\t{}\t{}\t{}\n".format(docid, scores_at_m[eval][i][2], scores_at_5[eval][i][2], scores_at_10[eval][i][2]))

@@ -3,7 +3,7 @@ import re
 import argparse
 
 DIGIT_token = "<digit>"
-EOS_token = "<eos>"
+EOS_token = ". <eos>"
 
 def meng17_tokenize(text):
     '''
@@ -43,22 +43,28 @@ def replace_numbers_to_DIGIT(tokens, k=2):
     return tokens
 
 def add_peos(dataset):
-    #We write the first keyphrase depending on if it's an absent keyphrase or a present keyphrase
-    if dataset["prmu"][0]=="P":
-        keyphrase_string = "{};".format(dataset["keyphrases"][0])
-    else:
-        keyphrase_string = "<peos>;{}".format(dataset["keyphrases"][0])
-
     peos_written=0
+    keyphrases=[dataset["keyphrases"][0]]
+    #We write the first keyphrase depending on if it's an absent keyphrase or a present keyphrase
+    if dataset["prmu"][0]!="P":
+        keyphrases.append("<peos>")
+        peos_written=1
+    
     for i in range(1,len(dataset["prmu"])):
         if peos_written == 0:
             if dataset["prmu"][i] != "P" and dataset["prmu"][i-1] == "P":
-                keyphrase_string = keyphrase_string+"<peos>;"
+                keyphrases.append("<peos>")
                 peos_written=1
+        if i == len(dataset["prmu"])-1 :
+            #print(len(dataset["prmu"])==len(dataset["keyphrases"]))
+            keyphrases.append(dataset["keyphrases"][-1])
 
-        keyphrase_string = keyphrase_string+ dataset["keyphrases"][i]+";"
+        else:    
+            keyphrases.append(dataset["keyphrases"][i])
 
-    dataset["keyphrases"]=keyphrase_string
+    if not peos_written:
+        keyphrases.append("<peos>")
+    dataset["keyphrases"]=";".join(keyphrases)
 
     return dataset
 
@@ -80,25 +86,29 @@ if __name__=="__main__":
 
     if args.relation_file != None:
         rel_data = load_dataset("json",data_files=args.relation_file)
-
-        rel_data = rel_data.map(lambda ex:{"title": ex["text"].split("<s>")[0]})
-        rel_data = rel_data.map(lambda ex:{"abstract": ex["text"].split("<s>")[1]})
-        rel_data = rel_data.rename_column("label","keyphrases")
-        rel_data = rel_data.map(lambda ex:{"keyphrases":ex["keyphrases"].split(";")},desc="splitting reference sequence for meng tokenization")
-        prmu_data = load_dataset("json",data_files="data/kp20k_3c_prmu.jsonl")
-        rel_data = rel_data["train"].add_column("prmu",prmu_data["train"]["prmu"])
+        
+        rel_data = rel_data.map(lambda ex:{"title": ex["text"].split("<s>")[0].lower()})
+        rel_data = rel_data.map(lambda ex:{"abstract": ex["text"].split("<s>")[1].lower()})
+        #rel_data = rel_data.rename_column("label","keyphrases")
+        #rel_data = rel_data.map(lambda ex:{"keyphrases":ex["keyphrases"].split(";")},desc="splitting reference sequence for meng tokenization")
+        # prmu_data = load_dataset("json",data_files="data/kp20k_3c_prmu.jsonl")
+        # rel_data = rel_data["train"].add_column("prmu",prmu_data["train"]["prmu"])
+        rel_data = rel_data["train"]
 
         data = concatenate_datasets([data,rel_data])
 
+    data = data.map(lambda ex:{"title":ex["title"].lower()})
+    data = data.map(lambda ex:{"abstract":ex["abstract"].lower()})
     data = data.map(meng17_tokenize_column,fn_kwargs={"column":"title"},desc="Meng 17 tokenization on title")
     data = data.map(meng17_tokenize_column,fn_kwargs={"column":"abstract"}, desc="Meng 17 tokenization on abstract")
     data = data.map(lambda ex:{"text":ex["title"]+EOS_token+ex["abstract"]},desc="Getting final input")
 
     # Processing the keyphrases sequence
-
+    data = data.map(lambda ex:{"keyphrases":ex["keyphrases"].lower()})
     data = data.map(meng17_tokenize_column,fn_kwargs={"column":"keyphrases"},desc="Meng 17 tokenization on reference keyphrases")
-    data = data.map(lambda ex:{"keyphrases":";".join(ex["keyphrases"])},num_proc=8,desc="Joining into final reference sequence")
-        
+    #data = data.map(lambda ex:{"keyphrases":";".join(ex["keyphrases"])},num_proc=8,desc="Joining into final reference sequence")
+    data = data.map(add_peos)
+       
     print(data["keyphrases"][0])
 
     with open(args.output_src_file,"w") as out_src:
