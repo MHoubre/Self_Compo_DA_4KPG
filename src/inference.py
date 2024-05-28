@@ -9,8 +9,10 @@ import datasets
 from datasets import load_dataset, load_from_disk, DatasetDict, Dataset, ReadInstruction
 from tokenizers import Tokenizer
 from datasets import load_metric
+from glob import glob
 #from data_processing_utils import get_input
 
+from pathlib import Path
 import torch
 import numpy as np
 import random
@@ -43,29 +45,38 @@ def generate_keyphrases(batch, key):
 
     return batch
 
-
 if __name__ == "__main__":
 
-    for training_type in ["3common","4common","5common"]:
+    for training_type in ["3common"]:
 
-        for kpdata in ["kp20k","kptimes","kpbiomed_small"]:
-            
-            model_path = "models/bart-{}/{}/checkpoint-150000".format(kpdata,training_type)
+        for kpdata in ["kp20k"] : #,"kpbiomed_small"]:
 
-            dataset = load_dataset("json",data_files={"test":"data/test_{}.jsonl".format(kpdata)})
+            print(kpdata)
+            print(training_type)
+            model_list = glob("models/filter_training/bart-{}/50ksteps/{}/final*".format(kpdata,training_type))
+            print(model_list)
+            model_list = [Path(element).stem for element in model_list]
+            print(model_list)
 
-            print("PROCESSING\n")
-            
-            dataset = dataset.map(prepare_input,fn_kwargs={"sp_token":"<s>"})
-            print("PROCESSING DONE\n")
-            
-            tokenizer = AutoTokenizer.from_pretrained("facebook/bart-base")
+            for checkpoint in model_list:
 
-            model = BartForConditionalGeneration.from_pretrained(model_path)
+                model_path = "models/filter_training/bart-{}/50ksteps/{}/{}".format(kpdata,training_type,checkpoint)
 
-            model.to("cuda")
+                dataset = load_dataset("json",data_files={"test":"data/test_{}.jsonl".format(kpdata)})
 
-            dataset = dataset.map(generate_keyphrases, fn_kwargs={"key":"text"})
+                print("MODEL: {}".format(checkpoint))
 
+                dataset = dataset.map(prepare_input,fn_kwargs={"sp_token":"<s>"})
+                print("PROCESSING DONE\n")
 
-            dataset["test"].to_json("generated/{}/{}/output.jsonl".format(kpdata,training_type))
+                tokenizer = AutoTokenizer.from_pretrained("facebook/bart-base")
+
+                model = BartForConditionalGeneration.from_pretrained(model_path)
+
+                model.to("cuda")
+
+                dataset = dataset.map(prepare_input,num_proc=6)
+
+                dataset = dataset.map(generate_keyphrases,fn_kwargs={"key":"text"})
+
+                dataset["train"].to_json("generated/filtering/{}/{}/output_final.jsonl".format(kpdata,training_type))

@@ -49,16 +49,6 @@ def replace_numbers_to_DIGIT(tokens, k=2):
 
     return tokens
 
-def get_input(dataset):
-    """
-    Function that gets the input as a sequence with two subsequences (separated by the BART tokenizer's separator token)
-    @param: The Dataset object you are working on
-    @return: The Dataset object you are working on with an additional column
-    """
-
-    dataset["text"] = dataset["title"] + "<s>" + dataset["abstract"]
-
-    return dataset
 
 def tokenize_string(kp, stemm=False):
     keyphrase_tokens = kp.split()
@@ -160,7 +150,7 @@ def get_common_keyphrases_pairs(dataset, doc2kp,n):
             #print(doc_keyphrases_set)
             common_keyphrases = list(keyphrases & doc_keyphrases_set) # We get the common keyphrases between the two documents
 
-            if len(common_keyphrases) >= maxi*0.6:
+            if len(common_keyphrases) >= maxi*n:
                 to_silver.append((document,";".join(common_keyphrases)))
         #print(to_silver)
     if len(to_silver) >= 5:
@@ -178,61 +168,8 @@ def prepare_augmentation_inputs(dataset, ids2abstract):
     for silver in dataset["silver_pairs"]:
         inputs.append(tuple((title+ "<s>" + ids2abstract[silver[0]] , silver[1])))
 
-    # linked_inputs = [(title+ "<s>" + ids2abstract[silver[0]] , silver[1]) for silver in dataset["silver_pairs"]]
-    # for my_input in linked_inputs:
-    #     inputs.append(my_input)
-    #print(linked_inputs[1])
-    
     dataset["inputs"] = inputs
     return dataset
-
-def get_hop_distance_from_nodes(dataset,reachable_nodes_dict, ids2abstract):
-
-    node_id = dataset["id"] # Id of the document we are currently working on
-    title = dataset["title"]
-
-    reachable_nodes = [num for i,num in enumerate(reachable_nodes_dict[node_id]) if not i%2] #list of the reachable node from a given document
-    rank_values = [num for i,num in enumerate(reachable_nodes_dict[node_id]) if i%2] # distance in number of hops between the node and the document
-
-    inputs=[]
-
-    for index, value in enumerate(rank_values):
-        reached_node = reachable_nodes[index]
-        inputs.append((title+ "<s>" + ids2abstract[reached_node],str(value)))
-
-    dataset["inputs"] = inputs
-    return dataset
-
-def remove_empty_linked_keyphrases(dataset):
-    dataset["linked_kps"] = [kp for kp in dataset["linked_kps"] if kp !=""]
-    return dataset
-
-def remove_in_doc_keyphrases(dataset, column):
-
-    cleaned_linked_kps=[]
-    for i,kp in enumerate(dataset[column]):
-
-        if kp not in dataset["lowered_keyphrases"]:# and dataset[column+"_prmu"][i] != "P" and dataset[column+"_prmu"][i] != "R":
-            cleaned_linked_kps.append(kp)
-    
-    dataset["cleaned_"+column] = cleaned_linked_kps
-
-    return dataset
-
-def trimm_column(dataset,column,n=1):
-    """
-    Function that trimms the number of utterances for a column.
-    Here it is used to only get the first X linked documents
-    """
-    tmp=[]
-    #n = int(len(dataset["keyphrases"])*0.3)
-    if len(dataset[column]) > n:
-        tmp = dataset[column][:n]
-        dataset[column] = tmp
-    else:
-        return dataset
-    return dataset
-
 
 
 def contains(subseq, inseq):

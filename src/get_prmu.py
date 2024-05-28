@@ -177,7 +177,7 @@ def tokenize_and_stemm_text(dataset):
     #abstract_tokens = [token.text for token in abstract_spacy]
 
     title_stems = [PorterStemmer().stem(w.lower()) for w in title_tokens]
-    abstract_stems = [PorterStemmer().stem(w.lower()) for w in title_tokens]
+    abstract_stems = [PorterStemmer().stem(w.lower()) for w in abstract_tokens]
     #abstract_stems = [PorterStemmer().stem(w.lower()) for w in abstract_tokens]
 
     dataset["title_stems"] = title_stems
@@ -217,7 +217,7 @@ if __name__ == "__main__":
     dataset = load_dataset("json",data_files=args.data_file)
     dataset = dataset["train"]
 
-    to_keep = ["name","title","abstract","keyphrases","top_m","top_5","top_10"]
+    to_keep = ["id","name","title","abstract","keyphrases","top_m","top_5","top_10"]
 
     #dataset = dataset.rename_column("label","keyphrases")
     dataset = dataset.map(lambda ex:{"keyphrases":ex["keywords"].split(";")})
