@@ -1,5 +1,5 @@
 import pandas as pd
-from scipy.stats import ttest_ind, ttest_1samp
+from scipy.stats import ttest_rel
 import argparse
 
 if __name__=="__main__":
@@ -14,6 +14,6 @@ if __name__=="__main__":
     df_base = pd.read_csv(args.base, sep="\t", header=None, names=["@M","@5","@10"])
     df_system = pd.read_csv(args.system ,sep="\t", header=None, names=["@M","@5","@10"])
 
-    print("@M: {}".format(ttest_ind(df_base["@M"], df_system["@M"])))
-    print("@5: {}".format(ttest_ind(df_base["@5"], df_system["@5"])))
-    print("@10: {}".format(ttest_ind(df_base["@10"], df_system["@10"])))
+    print("@M: {}".format(ttest_rel(df_base["@M"], df_system["@M"])))
+    print("@5: {}".format(ttest_rel(df_base["@5"], df_system["@5"])))
+    print("@10: {}".format(ttest_rel(df_base["@10"], df_system["@10"])))
