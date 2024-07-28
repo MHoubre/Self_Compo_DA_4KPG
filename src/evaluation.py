@@ -154,8 +154,8 @@ for i, docid in enumerate(tqdm(references)):
     abs_references = [phrase for j, phrase in enumerate(references[docid]) if not tgt_pres_abs[docid][j]]
     abs_top_m = [phrase for j, phrase in enumerate(top_m[docid]) if not pre_pres_abs_top_m[docid][j]]
     abs_top_k = [phrase for j, phrase in enumerate(top_k[docid]) if not pre_pres_abs_top_k[docid][j]]
-    generation_rates_at_m[docid] = len(abs_top_m) * 100/ len(top_m[docid])
-    generation_rates_at_10[docid] = len(abs_top_k) * 100 / len(top_k[docid])
+    generation_rates_at_m[docid] = len(abs_top_m) * 100/ len(top_m[docid]) if len(top_m[docid]) > 0 else 0
+    generation_rates_at_10[docid] = len(abs_top_k) * 100 / len(top_k[docid]) if len(top_k[docid]) > 0 else 0
 
     abs_top_k.extend([PAD_PHRASE for j in range(PAD_MIN-len(pres_top_k))])
     if len(abs_references):

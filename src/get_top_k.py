@@ -1,5 +1,6 @@
 from datasets import load_dataset
 import argparse
+import json
 
 """
 Function that gets the n topk keyphrases from a number of generated sequences
@@ -25,8 +26,8 @@ def topk(dataset,n=5):
         dataset["top_{}".format(n)] = topk[:n]
 
     elif len(topk) < n: # If we don't have enough keyphrases, we pad with wrong ones
-        for j in range(n-len(topk)):
-            topk.append("<unk>")
+        #for j in range(n-len(topk)):
+            #topk.append("<unk>")
         dataset["top_{}".format(n)] = topk
     else:
         dataset["top_{}".format(n)] = topk
@@ -38,10 +39,22 @@ if __name__=="__main__":
 
     parser.add_argument("-data_file")
     parser.add_argument("-output_file")
+    parser.add_argument("-file_type")
+    to_keep = ["id","top_m","top_5","top_10"]
 
     args = parser.parse_args()
 
-    d = load_dataset("json",data_files ={"test": args.data_file})
+    if args.file_type=="txt":
+        d = load_dataset("text",data_files={"test": args.data_file})
+        d = d.rename_column("text","pred")
+        d = d.map(lambda ex:{"pred":[ex["pred"]]})
+        
+        data = load_dataset("json",data_files="data/testsets/test_semeval.jsonl")
+        
+        d = d["test"].add_column("id",data["train"]["id"])
+    else:
+        d = load_dataset("json",data_files ={"test": args.data_file})
+        d = d["test"]
 
     d = d.map(lambda ex :{"pred": [element.split(";") for element in ex["pred"]]}) #The generated sequences are stored in a list
     d = d.map(lambda ex:{"top_m": ex["pred"][0]})
@@ -49,6 +62,6 @@ if __name__=="__main__":
     d = d.map(topk,fn_kwargs={"n": 10})
 
 
-    d = d.remove_columns(["title","abstract","text","pred"])
+    d = d.remove_columns([column for column in list(d.features.keys()) if column not in to_keep])
 
-    d["test"].to_json(args.output_file)
+    d.to_json(args.output_file)

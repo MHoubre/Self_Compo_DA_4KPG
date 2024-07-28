@@ -20,7 +20,7 @@ import re
 
 
 def prepare_input(dataset,sp_token="<s>"):
-    dataset["text"] = dataset["title"]+ sp_token + dataset["abstract"]
+    dataset["text"] = dataset["title"] + sp_token + dataset["abstract"]
     return dataset
 
 def generate_keyphrases(batch, key):
@@ -47,29 +47,29 @@ def generate_keyphrases(batch, key):
 
 if __name__ == "__main__":
 
-    for training_type in ["3common"]:
+    for training_type in ["singletask"]:
 
-        for kpdata in ["kp20k"] : #,"kpbiomed_small"]:
+        for kpdata in ["kpbiomed_small"] : #,"kpbiomed_small"]:
 
             print(kpdata)
             print(training_type)
-            model_list = glob("models/filter_training/bart-{}/50ksteps/{}/final*".format(kpdata,training_type))
+            model_list = glob("models/biobart-{}/{}/epoch*".format(kpdata,training_type))
             print(model_list)
             model_list = [Path(element).stem for element in model_list]
             print(model_list)
 
             for checkpoint in model_list:
 
-                model_path = "models/filter_training/bart-{}/50ksteps/{}/{}".format(kpdata,training_type,checkpoint)
+                model_path = "models/biobart-{}/{}/{}".format(kpdata,training_type,checkpoint)
 
-                dataset = load_dataset("json",data_files={"test":"data/test_{}.jsonl".format(kpdata)})
+                dataset = load_dataset("json",data_files={"test":"data/testsets/test_{}.jsonl".format(kpdata)})
 
                 print("MODEL: {}".format(checkpoint))
 
                 dataset = dataset.map(prepare_input,fn_kwargs={"sp_token":"<s>"})
                 print("PROCESSING DONE\n")
 
-                tokenizer = AutoTokenizer.from_pretrained("facebook/bart-base")
+                tokenizer = AutoTokenizer.from_pretrained("biobart-base")
 
                 model = BartForConditionalGeneration.from_pretrained(model_path)
 
@@ -79,4 +79,4 @@ if __name__ == "__main__":
 
                 dataset = dataset.map(generate_keyphrases,fn_kwargs={"key":"text"})
 
-                dataset["train"].to_json("generated/filtering/{}/{}/output_final.jsonl".format(kpdata,training_type))
+                dataset["test"].to_json("generated/{}/{}/{}/output_final.jsonl".format(kpdata,training_type,checkpoint))

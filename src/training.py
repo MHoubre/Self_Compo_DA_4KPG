@@ -26,10 +26,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     train_dataset = load_dataset("json",data_files = {"train":"data/{}/train.jsonl".format(args.dataset), "val":"data/{}/val.jsonl".format(args.dataset)})
-   
-    train_dataset = train_dataset.map(get_text)
-    train_dataset = train_dataset.map(join_keyphrases)
-
 
     if args.augmentation_file != None: # If we want to train a model with the augmented dataset
 
@@ -38,11 +34,13 @@ if __name__ == "__main__":
         #train_dataset = train_dataset.remove_columns(["id","title","abstract","prmu"])
 
         final_dataset = concatenate_datasets([train_dataset["train"],augmentation_dataset["train"]])
+        final_dataset = final_dataset.shuffle(seed=42)
     
     else:
         final_dataset = train_dataset
 
-    final_dataset = final_dataset.shuffle(seed=42)
+    final_dataset = final_dataset.map(get_text)
+    final_dataset = final_dataset.map(join_keyphrases)
 
     print(final_dataset)
 
@@ -57,11 +55,10 @@ if __name__ == "__main__":
             dataset["text"],max_length= 512,padding="max_length",truncation=True
         )
         
-        with tokenizer.as_target_tokenizer():
         
-            labels = tokenizer(
-                dataset["keyphrases"], max_length= 128, padding="max_length", truncation=True)
-            
+        labels = tokenizer(
+            dataset["keyphrases"], max_length= 128, padding="max_length", truncation=True)
+        
 
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
