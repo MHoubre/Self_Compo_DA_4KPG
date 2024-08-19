@@ -76,7 +76,7 @@ with open(args.system, 'r') as f:
             #doc = re.sub("<peos>","",doc)
         top_m[doc["id"]] = preprocess_phrases(doc["top_m"])
         top_k[doc["id"]] = preprocess_phrases(doc["top_10"])
-        #top_k[doc["id"]].extend([PAD_PHRASE for i in range(PAD_MIN-len(top_k[doc["id"]]))])
+        top_k[doc["id"]].extend([PAD_PHRASE for i in range(PAD_MIN-len(top_k[doc["id"]]))])
 
 # load reference file
 references = {}
@@ -144,7 +144,7 @@ for i, docid in enumerate(tqdm(references)):
     pres_references = [phrase for j, phrase in enumerate(references[docid]) if tgt_pres_abs[docid][j]]
     pres_top_m = [phrase for j, phrase in enumerate(top_m[docid]) if pre_pres_abs_top_m[docid][j]]
     pres_top_k = [phrase for j, phrase in enumerate(top_k[docid]) if pre_pres_abs_top_k[docid][j]]
-    pres_top_k.extend([PAD_PHRASE for j in range(PAD_MIN-len(pres_top_k))])
+    
     if len(pres_references):
         scores_at_m['pre'].append(evaluate(pres_top_m, pres_references))
         scores_at_5['pre'].append(evaluate(pres_top_k[:5], pres_references))
@@ -155,9 +155,10 @@ for i, docid in enumerate(tqdm(references)):
     abs_top_m = [phrase for j, phrase in enumerate(top_m[docid]) if not pre_pres_abs_top_m[docid][j]]
     abs_top_k = [phrase for j, phrase in enumerate(top_k[docid]) if not pre_pres_abs_top_k[docid][j]]
     generation_rates_at_m[docid] = len(abs_top_m) * 100/ len(top_m[docid]) if len(top_m[docid]) > 0 else 0
-    generation_rates_at_10[docid] = len(abs_top_k) * 100 / len(top_k[docid]) if len(top_k[docid]) > 0 else 0
 
-    abs_top_k.extend([PAD_PHRASE for j in range(PAD_MIN-len(pres_top_k))])
+    generation_rates_at_10[docid] = len(list(filter(lambda a: a != PAD_PHRASE, abs_top_k))) * 100 / len(top_k[docid]) if len(top_k[docid]) > 0 else 0
+
+    
     if len(abs_references):
         scores_at_m['abs'].append(evaluate(abs_top_m, abs_references))
         scores_at_5['abs'].append(evaluate(abs_top_k[:5], abs_references))
@@ -180,8 +181,8 @@ for eval in ['all', 'pre', 'abs']:
         with open(output_file, 'w') as f:
             for i, docid in enumerate(valid_keys[eval]):
                 f.write("{}\t{}\t{}\t{}\n".format(docid, scores_at_m[eval][i][2], scores_at_5[eval][i][2], scores_at_10[eval][i][2]))
-
-print("Generation rate @M: {}\n".format(np.mean(list(generation_rates_at_m.values()))))
+print("\n")
+print("Generation rate @M: {}".format(np.mean(list(generation_rates_at_m.values()))))
 print("Generation rate @10: {}\n".format(np.mean(list(generation_rates_at_10.values()))))
 
 if args.output_scores != None:

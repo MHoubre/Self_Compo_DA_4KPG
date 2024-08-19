@@ -37,27 +37,28 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-data_file")
-    parser.add_argument("-output_file")
-    parser.add_argument("-file_type")
+    parser.add_argument("-p","--pred_file")
+    parser.add_argument("-r","--reference_file")
+    parser.add_argument("-o","--output_file")
+    parser.add_argument("-t","--file_type")
     to_keep = ["id","top_m","top_5","top_10"]
 
     args = parser.parse_args()
 
     if args.file_type=="txt":
-        d = load_dataset("text",data_files={"test": args.data_file})
+        d = load_dataset("text",data_files={"test": args.pred_file})
         d = d.rename_column("text","pred")
         d = d.map(lambda ex:{"pred":[ex["pred"]]})
         
-        data = load_dataset("json",data_files="data/testsets/test_semeval.jsonl")
+        data = load_dataset("json",data_files=args.reference_file)
         
         d = d["test"].add_column("id",data["train"]["id"])
     else:
-        d = load_dataset("json",data_files ={"test": args.data_file})
+        d = load_dataset("json",data_files ={"test": args.pred_file})
         d = d["test"]
 
     d = d.map(lambda ex :{"pred": [element.split(";") for element in ex["pred"]]}) #The generated sequences are stored in a list
-    d = d.map(lambda ex:{"top_m": ex["pred"][0]})
+    d = d.map(lambda ex:{"top_m": list(set(ex["pred"][0]))})
     d = d.map(topk,fn_kwargs={"n": 5})
     d = d.map(topk,fn_kwargs={"n": 10})
 
