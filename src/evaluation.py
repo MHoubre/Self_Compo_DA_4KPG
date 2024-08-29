@@ -156,7 +156,7 @@ for i, docid in enumerate(tqdm(references)):
     abs_top_k = [phrase for j, phrase in enumerate(top_k[docid]) if not pre_pres_abs_top_k[docid][j]]
     generation_rates_at_m[docid] = len(abs_top_m) * 100/ len(top_m[docid]) if len(top_m[docid]) > 0 else 0
 
-    generation_rates_at_10[docid] = len(list(filter(lambda a: a != PAD_PHRASE, abs_top_k))) * 100 / len(top_k[docid]) if len(top_k[docid]) > 0 else 0
+    generation_rates_at_10[docid] = len(list(filter(lambda a: a != PAD_PHRASE, abs_top_k))) * 100 / len(list(filter(lambda a: a != PAD_PHRASE, top_k[docid]))) if len(list(filter(lambda a: a != PAD_PHRASE, top_k[docid]))) > 0 else 0
 
     
     if len(abs_references):

@@ -144,7 +144,9 @@ def get_common_keyphrases_pairs(dataset, doc2kp,n):
     to_silver = []
 
     for document in dataset["linked_documents"]:  # For each doc with which the document shares keyphrases
-        maxi = max(len(document["lowered_keyphrases"]), len(dataset["lowered_keyphrases"]))
+        
+        maxi = max(len(doc2kp[document]), len(dataset["lowered_keyphrases"]))
+        
         if document != dataset["id"]:
             doc_keyphrases_set = set(doc2kp[document]) 
             #print(doc_keyphrases_set)
