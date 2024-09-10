@@ -9,8 +9,6 @@ import numpy as np
 from tqdm import tqdm
 
 stemmer = PorterStemmer()
-PAD_PHRASE = "<<bad-bad>>"
-PAD_MIN = 10
 
 parser = argparse.ArgumentParser()
 
@@ -77,7 +75,6 @@ with open(args.system, 'r') as f:
             #doc = re.sub("<peos>","",doc)
         top_m[doc["id"]] = preprocess_phrases(doc["top_m"])
         top_k[doc["id"]] = preprocess_phrases(doc["top_10"])
-        #top_k[doc["id"]].extend([PAD_PHRASE for i in range(PAD_MIN-len(top_k[doc["id"]]))])
 
 # load reference file
 references = {}
@@ -138,15 +135,8 @@ scores_at_m = defaultdict(list)
 scores_at_5 = defaultdict(list)
 scores_at_10 = defaultdict(list)
 valid_keys =  defaultdict(list)
-generation_rates_at_m = defaultdict(list)
-generation_rates_at_10 = defaultdict(list)
-for i, docid in enumerate(tqdm(references)):
 
-    # compute scores for all references
-    scores_at_m['all'].append(evaluate(top_m[docid], references[docid]))
-    scores_at_5['all'].append(evaluate(top_k[docid][:5], references[docid]))
-    scores_at_10['all'].append(evaluate(top_k[docid][:10], references[docid]))
-    valid_keys['all'].append(docid)
+for i, docid in enumerate(tqdm(references)):
 
     # add scores for present and absent keyphrases
 
@@ -156,7 +146,7 @@ for i, docid in enumerate(tqdm(references)):
     abs_top_m = [phrase for j, phrase in enumerate(top_m[docid]) if not pre_pres_abs_top_m[docid][j]]
     abs_top_k = [phrase for j, phrase in enumerate(top_k[docid]) if not pre_pres_abs_top_k[docid][j]]
 
-    #abs_top_k.extend([PAD_PHRASE for j in range(PAD_MIN-len(pres_top_k))])
+
     if len(R_references):
         scores_at_m['R'].append(evaluate(abs_top_m, R_references))
         scores_at_5['R'].append(evaluate(abs_top_k[:5], R_references))
