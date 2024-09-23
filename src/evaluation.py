@@ -191,4 +191,3 @@ if args.output_scores != None:
 
     with open(re.sub("top_[a-z-A-Z]+\.jsonl$", "", args.system) + "gen_rate_@10.json","w") as o_ten:
         json.dump(generation_rates_at_10,o_ten)
-
