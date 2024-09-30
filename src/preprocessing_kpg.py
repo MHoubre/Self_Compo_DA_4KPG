@@ -39,6 +39,6 @@ if __name__ == "__main__":
     data = data.map(get_input, num_proc=8) # We get the input text at the right format (title + abstract)
     data = data.map(join_keyphrases,num_proc=8) # We put the list of keyphrases in a single sequence
 
-    filename = Path(args.data_file).stem()
+    filename = Path(args.data_file).stem
     
     data["train"].to_json(args.output_file)

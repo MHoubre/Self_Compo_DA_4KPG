@@ -3,7 +3,7 @@ import re
 import argparse
 
 DIGIT_token = "<digit>"
-EOS_token = ". <eos>"
+EOS_token = " . <eos> "
 
 def meng17_tokenize(text):
     '''
@@ -89,10 +89,6 @@ if __name__=="__main__":
         
         rel_data = rel_data.map(lambda ex:{"title": ex["text"].split("<s>")[0].lower()})
         rel_data = rel_data.map(lambda ex:{"abstract": ex["text"].split("<s>")[1].lower()})
-        #rel_data = rel_data.rename_column("label","keyphrases")
-        #rel_data = rel_data.map(lambda ex:{"keyphrases":ex["keyphrases"].split(";")},desc="splitting reference sequence for meng tokenization")
-        # prmu_data = load_dataset("json",data_files="data/kp20k_3c_prmu.jsonl")
-        # rel_data = rel_data["train"].add_column("prmu",prmu_data["train"]["prmu"])
         rel_data = rel_data["train"]
 
         data = concatenate_datasets([data,rel_data])
@@ -104,7 +100,7 @@ if __name__=="__main__":
     data = data.map(lambda ex:{"text":ex["title"]+EOS_token+ex["abstract"]},desc="Getting final input")
 
     # Processing the keyphrases sequence
-    data = data.map(lambda ex:{"keyphrases":ex["keyphrases"].lower()})
+    data = data.map(lambda ex:{"keyphrases":[element.lower() for element in ex["keyphrases"]]})
     data = data.map(meng17_tokenize_column,fn_kwargs={"column":"keyphrases"},desc="Meng 17 tokenization on reference keyphrases")
     #data = data.map(lambda ex:{"keyphrases":";".join(ex["keyphrases"])},num_proc=8,desc="Joining into final reference sequence")
     data = data.map(add_peos)
@@ -115,8 +111,9 @@ if __name__=="__main__":
         for line in data:
             out_src.write(line["text"])
             out_src.write("\n")
-    
-    with open(args.output_trg_file,"w") as out_trg:
-        for line in data:
-            out_trg.write(line["keyphrases"])
-            out_trg.write("\n")
+
+    if args.output_trg_file != None: 
+        with open(args.output_trg_file,"w") as out_trg:
+            for line in data:
+                out_trg.write(line["keyphrases"])
+                out_trg.write("\n")
