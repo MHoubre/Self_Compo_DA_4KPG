@@ -9,7 +9,7 @@ Training and testing data
 - KPBiomed: [https://huggingface.co/datasets/taln-ls2n/kpbiomed](https://huggingface.co/datasets/taln-ls2n/kpbiomed)
 
 Testing data:
-- Nus: [https://huggingface.co/datasets/memray/krapivin](https://huggingface.co/datasets/memray/krapivin)
+- Nus: [https://huggingface.co/datasets/memray/krapivin](https://huggingface.co/datasets/memray/nus)
 - Krapivin: [https://huggingface.co/datasets/memray/krapivin](https://huggingface.co/datasets/memray/krapivin)
 - SemEval 2010: [https://huggingface.co/datasets/taln-ls2n/semeval-2010-pre](https://huggingface.co/datasets/taln-ls2n/semeval-2010-pre)
 
