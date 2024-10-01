@@ -19,8 +19,6 @@ parser.add_argument("-r",
 parser.add_argument("-s",
                     "--system")
 
-parser.add_argument("-p","--predictions_type")
-
 parser.add_argument('--output_scores', 
                     )
 
@@ -69,11 +67,8 @@ top_k = {}
 
 with open(args.system, 'r') as f:
     for i,line in enumerate(f):
-        if args.predictions_type != "txt":
-            doc = json.loads(line)            
-        else:
-            doc = line
-            #doc = re.sub("<peos>","",doc)
+        doc = line
+
         top_m[doc["id"]] = preprocess_phrases(doc["top_m"])
         top_k[doc["id"]] = preprocess_phrases(doc["top_10"])
         top_k[doc["id"]].extend([PAD_PHRASE for i in range(PAD_MIN-len(top_k[doc["id"]]))])

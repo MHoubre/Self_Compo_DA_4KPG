@@ -1,14 +1,8 @@
 from nltk.stem.snowball import SnowballStemmer as Stemmer
-from datasets import load_dataset, Dataset
 from tqdm import tqdm
-import time
-import numpy as np
 from collections import Counter
-import networkx as nx
-
 import re
-import os
-import random
+
 
 DIGIT_token = "<digit>"
 
@@ -77,17 +71,12 @@ def fill_kp2doc(kp_lists,ids,kp2doc):
             id_list = kp2doc[kp]
             kp2doc[kp] = [*id_list,ids[i]]
 
-            #print(kp2doc[kp])
-
     return kp2doc
 
 def fill_doc2kp(doc_list,kps,doc2kp):
     for i, doc in enumerate(tqdm(doc_list)): #for each doc that has a list of keyphrases
         
         doc2kp[doc] = kps[i]
-
-            #print(kp2doc[kp])
-
     return doc2kp
 
 def fill_linkedkp_dict(kp_lists,kp2kp):
@@ -112,7 +101,7 @@ def fill_linkedkp_dict(kp_lists,kp2kp):
 def get_linked_documents_ids(dataset,kp2doc):
     linked_docs = []
     for kp in dataset["lowered_keyphrases"]: #for each keyphrase of a document
-        doc_list = list(set(kp2doc[kp]) - {dataset["id"]} ) #We get the list of linked documents to the keyphrase  #We don't want documents to be self linked
+        doc_list = list(set(kp2doc[kp]) - {dataset["id"]} ) #We get the list of linked documents to the keyphrase. We don't want documents to be self linked
         tmp = linked_docs
         linked_docs = [*tmp,*doc_list] #We keep repetitions because that way we can count how many keyphrases are shared between the document and its neighbours.
 
@@ -126,20 +115,17 @@ def get_linked_keyphrases(dataset,kp2kp):
     linked_kps = []
     for kp in dataset["lowered_keyphrases"]:
         kp_list = kp2kp[kp] #We get the list of linked documents to the keyphrase
-        #print(kp_list)
         tmp = linked_kps
         linked_kps = [*tmp, *kp_list] #We keep repetitions because that way we can count how many keyphrases are shared between the document and its neighbours.
 
     sorted_linked_kps = Counter(linked_kps).most_common()
 
     dataset["linked_kps"] = [element[0] for element in sorted_linked_kps] 
-    #dataset["number_of_instances_in_common"] = [element[1] for element in sorted_linked_kps]
     return dataset
 
 def get_common_keyphrases_pairs(dataset, doc2kp,n):
 
     keyphrases = set(dataset["lowered_keyphrases"])
-    #print(keyphrases)
 
     to_silver = []
 
@@ -149,12 +135,10 @@ def get_common_keyphrases_pairs(dataset, doc2kp,n):
         
         if document != dataset["id"]:
             doc_keyphrases_set = set(doc2kp[document]) 
-            #print(doc_keyphrases_set)
             common_keyphrases = list(keyphrases & doc_keyphrases_set) # We get the common keyphrases between the two documents
 
             if len(common_keyphrases) >= maxi*n:
                 to_silver.append((document,";".join(common_keyphrases)))
-        #print(to_silver)
     if len(to_silver) >= 5:
         to_silver = to_silver[:5]
 
@@ -166,7 +150,6 @@ def prepare_augmentation_inputs(dataset, ids2abstract):
 
     inputs = []
 
-    #inputs.append(tuple((title+ "<s>" + dataset["abstract"] , ";".join(dataset["keyphrases"]))))
     for silver in dataset["silver_pairs"]:
         inputs.append(tuple((title+ "<s>" + ids2abstract[silver[0]] , silver[1])))
 

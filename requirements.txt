@@ -1,0 +1,6 @@
+transformers>=4.35.0
+dataset>=2.12.0
+torch>=2.0.1
+nltk
+pandas
+scipy
