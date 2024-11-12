@@ -200,19 +200,24 @@ if __name__ == "__main__":
     print("PRMU")
     dataset = dataset.map(prmu_dataset, desc="Assigning a PRMU label to keyphrases") # Getting the PRMU labels for each keyphrase
 
-
-
     #dataset["train"].to_json("data_prmu.jsonl")
 
-    print("GETTING PRESENTS")
-    dataset = dataset.map(get_presents, num_proc=8, desc="Getting which keyphrases are present ones")
+    prmu_kps=[label for label_list in dataset["train"]["prmu"] for label in label_list]
 
-    print("GETTING ORDER")
-    dataset = dataset.map(get_present_order,num_proc=8, desc="Getting the apparition order of present keyphrases")
-
+    print("P: {:.2f}".format(prmu_kps.count("P")/len(prmu_kps)))
+    print("R: {:.2f}".format(prmu_kps.count("R")/len(prmu_kps)))
+    print("M: {:.2f}".format(prmu_kps.count("M")/len(prmu_kps)))
+    print("U: {:.2f}".format(prmu_kps.count("U")/len(prmu_kps)))
 
     if args.reorder:
+        print("GETTING PRESENTS")
+        dataset = dataset.map(get_presents, num_proc=8, desc="Getting which keyphrases are present ones")
+
+        print("GETTING ORDER")
+        dataset = dataset.map(get_present_order,num_proc=8, desc="Getting the apparition order of present keyphrases")
+
         print("REORDERING")
+        
         dataset = dataset.map(reorder_present_kp,num_proc=8, desc="Reordering the stemmed present keyphrases by their occurrence in the source text")
 
         dataset = dataset.map(reorder_kp,num_proc=8, desc="Reordering full present keyphrases")
@@ -222,4 +227,4 @@ if __name__ == "__main__":
         dataset = dataset.remove_columns(["abstract_stems","title_stems","tok_text"])
 
 
-    dataset['train'].to_json(args.output_file)
+    #dataset['train'].to_json(args.output_file)

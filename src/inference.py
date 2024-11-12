@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     for training_type in ["singletask"]:
 
-        for kpdata in ["kpbiomed_small"] : #,"kpbiomed_small"]:
+        for kpdata in ["kp20k","kptimes","kpbiomed_small"] : #,"kpbiomed_small"]:
 
             print(kpdata)
             print(training_type)
@@ -74,8 +74,6 @@ if __name__ == "__main__":
                 model = BartForConditionalGeneration.from_pretrained(model_path)
 
                 model.to("cuda")
-
-                dataset = dataset.map(prepare_input,num_proc=6)
 
                 dataset = dataset.map(generate_keyphrases,fn_kwargs={"key":"text"})
 
