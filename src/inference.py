@@ -47,20 +47,20 @@ def generate_keyphrases(batch, key):
 
 if __name__ == "__main__":
 
-    for training_type in ["singletask"]:
+    for training_type in ["no_augment","augmented"]:
 
-        for kpdata in ["kp20k","kptimes","kpbiomed_small"] : #,"kpbiomed_small"]:
+        for kpdata in ["kp20k","kptimes","kpbiomed_small"] :
 
             print(kpdata)
             print(training_type)
-            model_list = glob("models/biobart-{}/{}/epoch*".format(kpdata,training_type))
+            model_list = glob("models/{}/{}/epoch*".format(kpdata,training_type))
             print(model_list)
             model_list = [Path(element).stem for element in model_list]
             print(model_list)
 
             for checkpoint in model_list:
 
-                model_path = "models/biobart-{}/{}/{}".format(kpdata,training_type,checkpoint)
+                model_path = "models/{}/{}/{}".format(kpdata,training_type,checkpoint)
 
                 dataset = load_dataset("json",data_files={"test":"data/testsets/test_{}.jsonl".format(kpdata)})
 
@@ -69,7 +69,7 @@ if __name__ == "__main__":
                 dataset = dataset.map(prepare_input,fn_kwargs={"sp_token":"<s>"})
                 print("PROCESSING DONE\n")
 
-                tokenizer = AutoTokenizer.from_pretrained("biobart-base")
+                tokenizer = AutoTokenizer.from_pretrained("bart-base")
 
                 model = BartForConditionalGeneration.from_pretrained(model_path)
 
