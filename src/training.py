@@ -33,16 +33,14 @@ if __name__ == "__main__":
 
         #train_dataset = train_dataset.remove_columns(["id","title","abstract","prmu"])
 
-        final_dataset = concatenate_datasets([train_dataset["train"],augmentation_dataset["train"]])
-        final_dataset = final_dataset.shuffle(seed=42)
+        train_dataset["train"] = concatenate_datasets([train_dataset["train"],augmentation_dataset["train"]])
+        train_dataset["train"] = train_dataset["train"].shuffle(seed=42)
     
-    else:
-        final_dataset = train_dataset
 
-    final_dataset = final_dataset.map(get_text)
-    final_dataset = final_dataset.map(join_keyphrases)
+    train_dataset = train_dataset.map(get_text)
+    train_dataset = train_dataset.map(join_keyphrases)
 
-    print(final_dataset)
+    print(train_dataset)
 
     # Loading the model
     tokenizer = AutoTokenizer.from_pretrained("../huggingface/bart-base")
@@ -63,7 +61,7 @@ if __name__ == "__main__":
         model_inputs["labels"] = labels["input_ids"]
         return model_inputs
 
-    tokenized_datasets= final_dataset.map(preprocess_function, batched=True, num_proc = 10, desc="Running tokenizer on dataset")
+    tokenized_datasets= train_dataset.map(preprocess_function, batched=True, num_proc = 10, desc="Running tokenizer on dataset")
     
     tokenized_datasets.set_format("torch")
 
@@ -74,7 +72,7 @@ if __name__ == "__main__":
     output_dir=args.output_dir
 
     tokenized_datasets = tokenized_datasets.remove_columns(
-        final_dataset.column_names
+        train_dataset.column_names
     )
 
     trainer = Trainer(
@@ -95,7 +93,7 @@ if __name__ == "__main__":
             prediction_loss_only=True,
             load_best_model_at_end = False
         ),
-        train_dataset=tokenized_datasets,
+        train_dataset=tokenized_datasets["train"],
         eval_dataset=tokenized_datasets["val"]
     )
 
