@@ -35,3 +35,22 @@ This will take your predictions (if you use copyrnn models that generate in a tx
 To run evaluation
 ```python src/evaluation.py  --reference data/testsets/kp20k/test.jsonl --system model_outputs/kp20k/bart_top_preds.jsonl --output_scores yes```
 If you put ``output_scores no`` the score will just be printed in the console but not saved in csv files.
+
+
+##Cite this work
+If this work is of interest to you, please use the following citation
+
+```
+@inbook{10.1145/3677389.3702504,
+author = {Houbre, Ma\"{e}l and Boudin, Florian and Daille, B\'{e}atrice and Aizawa, Akiko},
+title = {Self-Compositional Data Augmentation for Scientific Keyphrase Generation},
+year = {2025},
+isbn = {9798400710933},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3677389.3702504},
+booktitle = {Proceedings of the 24th ACM/IEEE Joint Conference on Digital Libraries},
+articleno = {7},
+numpages = {10}
+}
+```
